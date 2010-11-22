@@ -96,8 +96,6 @@ planes = sorted(planes, key=lambda item: item['dist'])
 if not planes:
  sys.exit(1)
 
-print len(planes)
-
 for i in range(0,len(planes)):
     if (planes[i]['dist'] > r):
      break
