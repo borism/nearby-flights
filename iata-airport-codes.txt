@@ -6227,7 +6227,7 @@ PVC	Provincetown, MA [Provincetown Municipal Airport], USA
 PVD	Providence, RI [Theodore Francis Green State Airport], USA
 PVE	El Porvenir, Panama
 PVF	Placerville, CA [Placerville Airport], USA
-PVG	Portsmouth, VA [Hampton Roads Airport], USA
+PVG	Shanghai Pudong International Airport, China
 PVH	Porto Velho, RO, Brazil
 PVI	Paranavai, PR, Brazil
 PVK	Preveza/Lefkas, Greece
