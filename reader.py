@@ -3,10 +3,11 @@ import csv, math, icao24, flights, airports, os, sys, time, datetime, getopt
 
 h = 0
 r = 0
+hrzn = False
 planes = []
 format = "%Y-%m-%d %H:%M:%S"
 
-opts, args = getopt.getopt(sys.argv[1:], 'l:L:r:')
+opts, args = getopt.getopt(sys.argv[1:], 'l:L:r:h:H')
 for opt, arg in opts:
     if opt == '-l':
         lat = float(arg)
@@ -16,6 +17,8 @@ for opt, arg in opts:
         h = float(arg)
     elif opt == '-r':
         r = int(arg)
+    elif opt == '-H':
+        hrzn = True
 
 if lat and lon:
     me = [lat, lon]
@@ -131,7 +134,15 @@ for i in range(0,len(planes)):
     bearing_f = friendlyangle(planes[i]['bearing'])
     heading = str("%03.0f" % float(planes[i]['b']))
 
-    ident = flt +"\t"+ alt +"ft\t"+ dist +"km\t"+ horizon +"\t"+ bearing +" "+ bearing_f +"\t"+ heading +"\t"+ speed +"kph\tETA "+ eta +"\t"
+    if hrzn:
+        horizon_d = 3.57 * (math.sqrt(alt_m) + math.sqrt(h))
+        if planes[i]['dist'] < horizon_d:
+            horizon = "_-_"
+        else:
+            horizon = "___"
+        ident = flt +"\t"+ alt +"ft\t"+ dist +"km\t"+ horizon +"\t"+ bearing +" "+ bearing_f +"\t"+ heading +"\t"+ speed +"kph\tETA "+ eta +"\t"
+    else:
+        ident = flt +"\t"+ alt +"ft\t"+ dist +"km\t"+ bearing +" "+ bearing_f +"\t"+ heading +"\t"+ speed +"kph\tETA "+ eta +"\t"
 
     plinfo = icao24.lookup(planes[i]['flight'], planes[i]['hex'])
     if (plinfo):
