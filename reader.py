@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import csv, math, icao24, flights, airports, os, sys, time, datetime, getopt
 
+h = 0
 r = 0
 planes = []
 format = "%Y-%m-%d %H:%M:%S"
@@ -11,6 +12,8 @@ for opt, arg in opts:
         lat = float(arg)
     elif opt == '-L':
         lon = float(arg)
+    elif opt == '-h':
+        h = float(arg)
     elif opt == '-r':
         r = int(arg)
 
@@ -20,6 +23,8 @@ else:
     print "please provide both latitude and longtitude"
     sys.exit(1)
 
+if h < 0:
+    h = 0 
 if r <= 0:
     r = 500
 
@@ -68,9 +73,9 @@ def distance(origin, dest):
 
 timenow = time.mktime(time.localtime())
 if os.path.exists("raw.csv"):
- timelast = os.path.getmtime("raw.csv")
+    timelast = os.path.getmtime("raw.csv")
 else:
- timelast = 0
+    timelast = 0
 if (timenow - timelast > 45):
     os.unlink('raw.csv')
     os.unlink('data.xml')
@@ -82,36 +87,52 @@ if (timenow - timelast > 45):
 d = csv.DictReader(open("raw.csv"), delimiter=",")
 
 try:
- for row in d:
-    dist, bearing = distance(me, [float(row["lat"]), float(row["long"])])
-    row['dist'] = dist
-    row['bearing'] = bearing
-    if (int(row['alt']) <= 0): continue
-    planes.append(row)
+    for row in d:
+        dist, bearing = distance(me, [float(row["lat"]), float(row["long"])])
+        row['dist'] = dist
+        row['bearing'] = bearing
+        if (int(row['alt']) <= 0): continue
+        planes.append(row)
 except:
- sys.exit(0)
+    sys.exit(0)
 
 planes = sorted(planes, key=lambda item: item['dist'])
 
 if not planes:
- sys.exit(1)
+    sys.exit(1)
 
 for i in range(0,len(planes)):
     if (planes[i]['dist'] > r):
      break
+
     heading = abs(int(planes[i]['bearing']) - int(planes[i]['b']))
-    speed = int(planes[i]['a'])*1.852
-    try:
-     eta = str("%d" % ((int(planes[i]['dist'])*60)/speed)) + "m"
-    except ZeroDivisionError:
-     eta = "-"
-    if (heading < 170) or (heading > 190):
-     eta = "-"
-    if planes[i]['flight']:
-     flt = str(planes[i]['flight'])
+    v = float(planes[i]['a'])*1.852
+    speed = str("%3.0f" % v)
+
+    if (v > 0) and (heading > 170) and (heading < 190):
+        eta = str("%d" % ((int(planes[i]['dist'])*60)/v)) + "m"
     else:
-     flt = "      "
-    ident = flt +"\t"+ str(planes[i]['alt']) +"ft\t"+ str("%.1f" % planes[i]['dist']) +"km\t"+ str("%03.0f" % float(planes[i]['bearing'])) +" "+ friendlyangle(planes[i]['bearing']) +"\t"+ str("%03.0f" % float(planes[i]['b'])) +"\t"+ str("%3.0f" % speed) +"kph\tETA "+ eta +"\t"
+        eta = "-"
+
+    if planes[i]['flight']:
+        flt = str(planes[i]['flight'])
+    else:
+        flt = "      "
+
+    alt = str(planes[i]['alt'])
+    alt_m = float(planes[i]['alt']) * 0.3048
+    dist = str("%.1f" % planes[i]['dist'])
+    horizon_d = 3.57 * (math.sqrt(alt_m) + math.sqrt(h))
+    if planes[i]['dist'] < horizon_d:
+        horizon = "_-_"
+    else:
+        horizon = "___"
+    bearing = str("%03.0f" % float(planes[i]['bearing']))
+    bearing_f = friendlyangle(planes[i]['bearing'])
+    heading = str("%03.0f" % float(planes[i]['b']))
+
+    ident = flt +"\t"+ alt +"ft\t"+ dist +"km\t"+ horizon +"\t"+ bearing +" "+ bearing_f +"\t"+ heading +"\t"+ speed +"kph\tETA "+ eta +"\t"
+
     plinfo = icao24.lookup(planes[i]['flight'], planes[i]['hex'])
     if (plinfo):
         print datetime.datetime.today().strftime(format), ident, plinfo["rego"], "\t", plinfo["shorttype"], "\t",
