@@ -1,14 +1,16 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 import urllib2, json, shelve, flights, time, getopt, sys
 test_callsign = "VOZ482"
 test_hex = "7C6D31"
-#opts, args = getopt.getopt(sys.argv[1:], 'c:h:')
 
-#for opt, arg in opts:
-#    if opt == '-c':
-#        test_callsign = arg
-#    elif opt == '-h':
-#        test_hex = arg
+if __name__ == '__main__':
+    opts, args = getopt.getopt(sys.argv[1:], 'c:h:')
+
+    for opt, arg in opts:
+        if opt == '-c':
+            test_callsign = arg
+        elif opt == '-h':
+            test_hex = arg
 
 def check_db(icao):
     history = shelve.open(".histfile")
