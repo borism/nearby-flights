@@ -4,10 +4,12 @@ import csv, math, icao24, flights, airports, os, sys, time, datetime, getopt
 h = 0
 r = 0
 hrzn = False
+fx = False
 planes = []
+fixes = []
 format = "%Y-%m-%d %H:%M:%S"
 
-opts, args = getopt.getopt(sys.argv[1:], 'l:L:r:h:H')
+opts, args = getopt.getopt(sys.argv[1:], 'l:L:r:h:HF')
 for opt, arg in opts:
     if opt == '-l':
         lat = float(arg)
@@ -19,6 +21,8 @@ for opt, arg in opts:
         r = int(arg)
     elif opt == '-H':
         hrzn = True
+    elif opt == '-F':
+        fx = True
 
 if lat and lon:
     me = [lat, lon]
@@ -106,13 +110,38 @@ if not planes:
 
 for i in range(0,len(planes)):
     if (planes[i]['dist'] > r):
-     break
+        break
+
+    if fx:
+        f = csv.DictReader(open("fix.csv"), delimiter=",")    
+        for fix_row in f:
+            fix_dist, fix_bearing = distance([float(planes[i]['lat']), float(planes[i]['long'])], [float(fix_row["lat"]), float(fix_row["lon"])])
+            fix_row['dist'] = fix_dist
+            fix_row['bearing'] = fix_bearing
+            fixes.append(fix_row)
+
+        fixes = sorted(fixes, key=lambda item: item['dist'])
+
+        for j in range(0,len(fixes)):
+            if (int(fixes[j]['bearing']) == int(planes[i]['b'])):
+                fixstr = "\t" + str(fixes[j]['fix']) + "\t"
+                break
+            else:
+                if (int(fixes[j]['dist']) > 500):
+                    fixstr = "\t  -  \t"
+                    break
+                else:
+                    continue
+
+        fixes = []
+    else:
+        fixstr = "\t"
 
     heading = abs(int(planes[i]['bearing']) - int(planes[i]['b']))
     v = float(planes[i]['a'])*1.852
     speed = str("%3.0f" % v)
 
-    if (v > 0) and (heading > 170) and (heading < 190):
+    if (v > 0) and (heading > 157) and (heading < 203):
         eta = str("%d" % ((int(planes[i]['dist'])*60)/v)) + "m"
     else:
         eta = "-"
@@ -124,12 +153,7 @@ for i in range(0,len(planes)):
 
     alt = str(planes[i]['alt'])
     alt_m = float(planes[i]['alt']) * 0.3048
-    dist = str("%.1f" % planes[i]['dist'])
-    horizon_d = 3.57 * (math.sqrt(alt_m) + math.sqrt(h))
-    if planes[i]['dist'] < horizon_d:
-        horizon = "_-_"
-    else:
-        horizon = "___"
+    dist = str("%3.1f" % float(planes[i]['dist']))
     bearing = str("%03.0f" % float(planes[i]['bearing']))
     bearing_f = friendlyangle(planes[i]['bearing'])
     heading = str("%03.0f" % float(planes[i]['b']))
@@ -140,9 +164,9 @@ for i in range(0,len(planes)):
             horizon = "_-_"
         else:
             horizon = "___"
-        ident = flt +"\t"+ alt +"ft\t"+ dist +"km\t"+ horizon +"\t"+ bearing +" "+ bearing_f +"\t"+ heading +"\t"+ speed +"kph\tETA "+ eta +"\t"
+        ident = flt +"\t"+ alt +"ft\t"+ dist +"km\t"+ horizon +"\t"+ bearing +" "+ bearing_f +"\t"+ heading + fixstr + speed +"kph\tETA "+ eta +"\t"
     else:
-        ident = flt +"\t"+ alt +"ft\t"+ dist +"km\t"+ bearing +" "+ bearing_f +"\t"+ heading +"\t"+ speed +"kph\tETA "+ eta +"\t"
+        ident = flt +"\t"+ alt +"ft\t"+ dist +"km\t"+ bearing +" "+ bearing_f +"\t"+ heading + fixstr + speed +"kph\tETA "+ eta +"\t"
 
     plinfo = icao24.lookup(planes[i]['flight'], planes[i]['hex'])
     if (plinfo):
@@ -154,6 +178,6 @@ for i in range(0,len(planes)):
             destination = flinfo["to"]
             print "%s-%s\t\tFrom %s to %s" % (origin, destination, airports.lookup(origin), airports.lookup(destination))
         else:
-            print "-"
+            print "   -   "
     except KeyError:
-        print "-"
+        print "   -   "
