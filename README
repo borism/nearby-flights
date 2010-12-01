@@ -1,0 +1,13 @@
+
+Usage
+
+  ./reader.py -l <latitude> -L <longitude> [-r <radius> -h <height> -H -F]
+
+Flags
+
+  -l <latitude>     -   Latitude in decimal format
+  -L <longitude>    -   Longitude in decimal format
+  -r <radius>       -   Radius in kilometers (default 500km)
+  -h <height>       -   Height in meters AMSL (default 0m)
+  -H                -   Enable below(___)/above(_-_) horizon display
+  -F                -   Enable waypoint fix detection
