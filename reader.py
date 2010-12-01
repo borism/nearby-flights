@@ -57,6 +57,7 @@ def friendlyangle(angle):
     return cardinals[int(round((angle % 360) / 22.5) % len(cardinals))]
 
 def distance(origin, dest):
+    tc1 = 1
     lat1, lon1 = origin
     lat2, lon2 = dest
     dlat = math.radians(lat2-lat1)
@@ -68,13 +69,13 @@ def distance(origin, dest):
             math.cos(math.radians(lat2)) * math.cos(dlon))
 
     if math.sin(dlon) < 0:
-        tc1 = math.acos((math.sin(math.radians(lat2)) -
+        tc1 = math.acos(float("%.10f" % ((math.sin(math.radians(lat2)) -
                 math.sin(math.radians(lat1))*math.cos(d)) /
-                (math.sin(d)*math.cos(math.radians(lat1))))
+                (math.sin(d)*math.cos(math.radians(lat1))))))
     else:
-        tc1 = 2 * math.pi - math.acos((math.sin(math.radians(lat2)) -
+        tc1 = 2 * math.pi - math.acos(float("%.10f" % ((math.sin(math.radians(lat2)) -
                 math.sin(math.radians(lat1))*math.cos(d)) /
-                (math.sin(d)*math.cos(math.radians(lat1))))
+                (math.sin(d)*math.cos(math.radians(lat1))))))
 
     return d * 6371, 360 - math.degrees(tc1)
 
@@ -108,12 +109,33 @@ planes = sorted(planes, key=lambda item: item['dist'])
 if not planes:
     sys.exit(1)
 
+fixcsv = "fix.csv." + str("%d" % me[0]) +"."+ str("%d" % me[1])
+if fx and not os.path.exists(fixcsv):
+    f = csv.DictReader(open("fix.csv"), delimiter=",")
+    for fix_row in f:
+        fix_dist, fix_bearing = distance([float("%d" % me[0]), float("%d" % me[1])], [float(fix_row["lat"]), float(fix_row["lon"])])
+        fix_row['dist'] = fix_dist
+        fixes.append(fix_row)
+
+    fixes = sorted(fixes, key=lambda item: item['dist'])
+
+    fixout = open(fixcsv, "w")
+    print >> fixout, "fix,lat,lon"
+    for j in range(0,len(fixes)):
+        if (int(fixes[j]['dist']) > 2000):
+            fixout.close()
+            fixes = []
+            break
+        else:
+            fixoutstr = str(fixes[j]['fix']) +","+ str(fixes[j]['lat']) +","+ str(fixes[j]['lon'])
+            print >> fixout, fixoutstr
+
 for i in range(0,len(planes)):
     if (planes[i]['dist'] > r):
         break
 
     if fx:
-        f = csv.DictReader(open("fix.csv"), delimiter=",")    
+        f = csv.DictReader(open(fixcsv), delimiter=",")    
         for fix_row in f:
             fix_dist, fix_bearing = distance([float(planes[i]['lat']), float(planes[i]['long'])], [float(fix_row["lat"]), float(fix_row["lon"])])
             fix_row['dist'] = fix_dist
