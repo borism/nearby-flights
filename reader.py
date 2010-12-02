@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import csv, math, icao24, flights, airports, os, sys, time, datetime, getopt
+import csv, math, icao24, flights, airports, os, sys, time, datetime, getopt, shutil, urllib2
 
 h = 0
 r = 0
@@ -68,11 +68,11 @@ def distance(origin, dest):
             math.cos(math.radians(lat1)) *
             math.cos(math.radians(lat2)) * math.cos(dlon))
 
-    if math.sin(dlon) < 0:
+    if math.sin(dlon) < 0 and (math.sin(d)*math.cos(math.radians(lat1))) != 0:
         tc1 = math.acos(float("%.10f" % ((math.sin(math.radians(lat2)) -
                 math.sin(math.radians(lat1))*math.cos(d)) /
                 (math.sin(d)*math.cos(math.radians(lat1))))))
-    else:
+    elif (math.sin(d)*math.cos(math.radians(lat1))) != 0:
         tc1 = 2 * math.pi - math.acos(float("%.10f" % ((math.sin(math.radians(lat2)) -
                 math.sin(math.radians(lat1))*math.cos(d)) /
                 (math.sin(d)*math.cos(math.radians(lat1))))))
@@ -85,12 +85,27 @@ if os.path.exists("raw.csv"):
 else:
     timelast = 0
 if (timenow - timelast > 45):
+    #os.unlink('data.xml')
+    #dataout = open("data.xml", "w")
+    data = urllib2.urlopen("http://www.flightradar24.com/_xml/plane_data3.php").read()
+    #print >> dataout, data
+    #dataout.close()
+
     os.unlink('raw.csv')
-    os.unlink('data.xml')
-    os.system('wget --quiet "http://www.flightradar24.com/_xml/plane_data3.php" -O data.xml')
-    os.system('echo "hex,code,flight,alt,lat,long,a,b,c,d,date" > raw.csv')
-    os.system('tidy -quiet -xml data.xml | grep newpoly | cut -c26- | cut -f-11 -d "," >> raw.csv')
-    os.system('cp raw.csv raw.csv.`date +%Y.%m.%d-%H:%M`')
+    rawout = open("raw.csv", "w")
+    print >> rawout, "hex,code,flight,alt,lat,long,a,b,c,d,date"
+    for dat in data.splitlines():
+        da = dat.split('\"')
+        try:
+            print >> rawout, da[1].split(' ')[2], da[1].split(' ')[3].rstrip(',')
+        except IndexError:
+            continue
+    rawout.close()
+
+    #os.system('tidy -quiet -xml data.xml | grep newpoly | cut -c26- | cut -f-11 -d "," >> raw.csv.tidy')
+
+    rawdest = "raw.csv." + datetime.datetime.today().strftime("%Y.%m.%d-%H:%M")
+    shutil.copyfile("raw.csv", rawdest)
 
 d = csv.DictReader(open("raw.csv"), delimiter=",")
 
@@ -192,13 +207,14 @@ for i in range(0,len(planes)):
 
     plinfo = icao24.lookup(planes[i]['flight'], planes[i]['hex'])
     if (plinfo):
-        print datetime.datetime.today().strftime(format), ident, plinfo["rego"], "\t", plinfo["shorttype"], "\t",
+        print datetime.datetime.today().strftime(format), ident, plinfo["rego"], "\t", plinfo["shorttype"],
+    
     try:
         flinfo = flights.lookup(planes[i]['flight'])
         if (flinfo):
             origin = flinfo["from"]
             destination = flinfo["to"]
-            print "%s-%s\t\tFrom %s to %s" % (origin, destination, airports.lookup(origin), airports.lookup(destination))
+            print "\t%s-%s\t\tFrom %s to %s" % (origin, destination, airports.lookup(origin), airports.lookup(destination))
         else:
             print "   -   "
     except KeyError:
