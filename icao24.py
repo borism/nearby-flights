@@ -13,7 +13,7 @@ if __name__ == '__main__':
             test_hex = arg
 
 def check_db(icao):
-    history = shelve.open(".histfile")
+    history = shelve.open("planes.db")
     try:
         return history[icao]
     except:
@@ -22,7 +22,7 @@ def check_db(icao):
         history.close()
 
 def store_db(icao, entry):
-    history = shelve.open(".histfile")
+    history = shelve.open("planes.db")
     history[icao] = entry
     history.close()
 
@@ -39,7 +39,7 @@ def get_from_web(flightnum, icao):
             }
     store_db(icao, entry)
     flights.store_db(flightnum, d)
-    time.sleep(2)
+    time.sleep(0.5)
     return entry
 
 def lookup(flightnum, icao):

@@ -117,7 +117,7 @@ try:
         if (int(row['alt']) <= 0): continue
         planes.append(row)
 except:
-    sys.exit(0)
+    sys.exit(1)
 
 planes = sorted(planes, key=lambda item: item['dist'])
 
@@ -137,7 +137,7 @@ if fx and not os.path.exists(fixcsv):
     fixout = open(fixcsv, "w")
     print >> fixout, "fix,lat,lon"
     for j in range(0,len(fixes)):
-        if (int(fixes[j]['dist']) > 2000):
+        if (int(fixes[j]['dist']) > 1000):
             fixout.close()
             fixes = []
             break
@@ -188,9 +188,9 @@ for i in range(0,len(planes)):
     else:
         flt = "      "
 
-    alt = str(planes[i]['alt'])
+    alt = str("%05.0f" % float(planes[i]['alt']))
     alt_m = float(planes[i]['alt']) * 0.3048
-    dist = str("%3.1f" % float(planes[i]['dist']))
+    dist = str("%03.1f" % float(planes[i]['dist']))
     bearing = str("%03.0f" % float(planes[i]['bearing']))
     bearing_f = friendlyangle(planes[i]['bearing'])
     heading = str("%03.0f" % float(planes[i]['b']))
