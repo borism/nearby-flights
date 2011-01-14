@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import csv, math, icao24, flights, airports, os, sys, time, datetime, getopt, shutil, urllib2
+import csv, math, icao24, flights, airports, os, sys, time, datetime, getopt, shutil, urllib2, distbear
 
 h = 0
 r = 0
@@ -56,29 +56,6 @@ cardinals = [
 def friendlyangle(angle):
     return cardinals[int(round((angle % 360) / 22.5) % len(cardinals))]
 
-def distance(origin, dest):
-    tc1 = 1
-    lat1, lon1 = origin
-    lat2, lon2 = dest
-    dlat = math.radians(lat2-lat1)
-    dlon = math.radians(lon2-lon1)
-
-    d = math.acos(math.sin(math.radians(lat1)) *
-            math.sin(math.radians(lat2)) +
-            math.cos(math.radians(lat1)) *
-            math.cos(math.radians(lat2)) * math.cos(dlon))
-
-    if math.sin(dlon) < 0 and (math.sin(d)*math.cos(math.radians(lat1))) != 0:
-        tc1 = math.acos(float("%.10f" % ((math.sin(math.radians(lat2)) -
-                math.sin(math.radians(lat1))*math.cos(d)) /
-                (math.sin(d)*math.cos(math.radians(lat1))))))
-    elif (math.sin(d)*math.cos(math.radians(lat1))) != 0:
-        tc1 = 2 * math.pi - math.acos(float("%.10f" % ((math.sin(math.radians(lat2)) -
-                math.sin(math.radians(lat1))*math.cos(d)) /
-                (math.sin(d)*math.cos(math.radians(lat1))))))
-
-    return d * 6371, 360 - math.degrees(tc1)
-
 timenow = time.mktime(time.localtime())
 if os.path.exists("raw.csv"):
     timelast = os.path.getmtime("raw.csv")
@@ -91,7 +68,8 @@ if (timenow - timelast > 45):
     #print >> dataout, data
     #dataout.close()
 
-    os.unlink('raw.csv')
+    if os.path.exists('raw.csv'):
+        os.unlink('raw.csv')
     rawout = open("raw.csv", "w")
     print >> rawout, "hex,code,flight,alt,lat,long,a,b,c,d,date"
     for dat in data.splitlines():
@@ -111,24 +89,22 @@ d = csv.DictReader(open("raw.csv"), delimiter=",")
 
 try:
     for row in d:
-        dist, bearing = distance(me, [float(row["lat"]), float(row["long"])])
+        dist, bearing = distbear.distance(me, [float(row["lat"]), float(row["long"])])
         row['dist'] = dist
         row['bearing'] = bearing
         if (int(row['alt']) <= 0): continue
         planes.append(row)
 except:
+    print "no flights found"
     sys.exit(1)
 
 planes = sorted(planes, key=lambda item: item['dist'])
-
-if not planes:
-    sys.exit(1)
 
 fixcsv = "fix.csv." + str("%d" % me[0]) +"."+ str("%d" % me[1])
 if fx and not os.path.exists(fixcsv):
     f = csv.DictReader(open("fix.csv"), delimiter=",")
     for fix_row in f:
-        fix_dist, fix_bearing = distance([float("%d" % me[0]), float("%d" % me[1])], [float(fix_row["lat"]), float(fix_row["lon"])])
+        fix_dist, fix_bearing = distbear.distance([float("%d" % me[0]), float("%d" % me[1])], [float(fix_row["lat"]), float(fix_row["lon"])])
         fix_row['dist'] = fix_dist
         fixes.append(fix_row)
 
@@ -152,7 +128,7 @@ for i in range(0,len(planes)):
     if fx:
         f = csv.DictReader(open(fixcsv), delimiter=",")    
         for fix_row in f:
-            fix_dist, fix_bearing = distance([float(planes[i]['lat']), float(planes[i]['long'])], [float(fix_row["lat"]), float(fix_row["lon"])])
+            fix_dist, fix_bearing = distbear.distance([float(planes[i]['lat']), float(planes[i]['long'])], [float(fix_row["lat"]), float(fix_row["lon"])])
             fix_row['dist'] = fix_dist
             fix_row['bearing'] = fix_bearing
             fixes.append(fix_row)
