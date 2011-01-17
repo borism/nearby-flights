@@ -1,7 +1,9 @@
 
 Description
 
-    nearby-flights is a collection of Python tools for textual presentation of ADS-B flight data in airspace covered by flightradar24.com website and its' volunteers.
+    nearby-flights is a collection of Python tools for textual presentation of
+    ADS-B flight data in airspace covered by flightradar24.com website and its'
+    volunteers.
 
 Usage
 
@@ -9,9 +11,9 @@ Usage
 
 Flags
 
-    -l <latitude>     -   Latitude in decimal format
-    -L <longitude>    -   Longitude in decimal format
-    -r <radius>       -   Radius in kilometers (default 500km)
-    -h <height>       -   Height in meters AMSL (default 0m)
-    -H                -   Enable below(___)/above(_-_) horizon display
-    -F                -   Enable waypoint fix detection
+    -l <latitude>   - Latitude in decimal format
+    -L <longitude>  - Longitude in decimal format
+    -r <radius>     - Radius in kilometers (default 500km)
+    -h <height>     - Height in meters AMSL (default 0m)
+    -H              - Enable below(___)/above(_-_) horizon display
+    -F              - Enable waypoint fix detection
